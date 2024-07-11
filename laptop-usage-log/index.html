@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- <link rel="stylesheet" href="style.css" /> -->
+  </head>
+  <body>
+    <h1>Laptop Usage Log</h1>
+    <h2>Teacher's Login</h2>
+    <!-- Instructions for Teachers -->
+    <div class="instructions">
+      <p><strong>Instructions for Teachers:</strong></p>
+      <ul>
+        <li>Login with your name and lesson.</li>
+        <li>
+          A form will appear where your students can enter their name and laptop
+          used.
+        </li>
+        <li>
+          Students should sign in when they start using the laptop and sign out
+          when they return it.
+        </li>
+        <li>Once all students are done, please log out.</li>
+      </ul>
+    </div>
+
+    <form action="submit.php" method="post">
+      <div class="section">
+        <label for="name">Name: </label>
+        <input
+          type="text"
+          id="name"
+          name="name"
+          placeholder="Teacher Name here..."
+          value=""
+          required
+        />
+      </div>
+      <div class="section">
+        <label for="lesson">Lesson: </label>
+        <input type="text" id="lesson" name="lesson" value="" required />
+      </div>
+
+      <input type="text" id="signIn" name="signIn" value="True" hidden />
+
+      <input type="text" id="datetime" name="datetime" value="" hidden />
+
+      <input type="submit" value="Submit" />
+    </form>
+
+    <script>
+      function getCookie(name) {
+        let cookieArr = document.cookie.split(";");
+        for (let i = 0; i < cookieArr.length; i++) {
+          let cookiePair = cookieArr[i].split("=");
+          if (name == cookiePair[0].trim()) {
+            return decodeURIComponent(cookiePair[1]);
+          }
+        }
+        return null;
+      }
+
+      // Check if the teacher_id cookie exists
+      if (!getCookie("teacher_id")) {
+        // Redirect to index.html if the cookie does not exist
+      } else {
+        window.location.href = "student.html";
+      }
+
+      var currentDatetime = new Date();
+      var formattedDate =
+        currentDatetime.getFullYear() +
+        "-" +
+        String(currentDatetime.getMonth() + 1).padStart(2, "0") +
+        "-" +
+        String(currentDatetime.getDate()).padStart(2, "0") +
+        " " +
+        String(currentDatetime.getHours()).padStart(2, "0") +
+        ":" +
+        String(currentDatetime.getMinutes()).padStart(2, "0") +
+        ":" +
+        String(currentDatetime.getSeconds()).padStart(2, "0");
+      document.getElementById("datetime").value = formattedDate;
+    </script>
+  </body>
+</html>
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  h1,
+  h2 {
+    color: #333;
+    text-align: center;
+    border: none;
+    width: 100%;
+    margin-bottom: 20px;
+  }
+
+  .instructions,
+  form {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    width: 100%;
+    max-width: 600px;
+  }
+
+  .instructions {
+    margin-bottom: 40px;
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .section {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  label {
+    width: 100px;
+    margin-right: 10px;
+  }
+
+  input[type="text"] {
+    flex: 1;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+  }
+
+  input[type="submit"] {
+    padding: 10px;
+    border-radius: 4px;
+    border: none;
+    background-color: #4caf50;
+    color: white;
+    cursor: pointer;
+    margin-top: 10px;
+    align-self: flex-end;
+  }
+
+  input[type="submit"]:hover {
+    background-color: #45a049;
+  }
+</style>

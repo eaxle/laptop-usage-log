@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Attendance Table</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f0f0f0;
+        padding: 20px;
+      }
+      h2 {
+        color: #333;
+        text-align: center;
+      }
+      .alert {
+        display: none;
+        padding: 10px;
+        margin-bottom: 15px;
+        text-align: center;
+        border-radius: 4px;
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80%;
+        z-index: 1000;
+      }
+      .alert-success {
+        background-color: #4caf50;
+        color: white;
+      }
+      .alert-error {
+        background-color: #f44336;
+        color: white;
+      }
+      form {
+        margin-bottom: 20px;
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+      }
+      .section {
+        margin-right: 20px;
+      }
+      .section label {
+        font-weight: bold;
+        margin-right: 5px;
+      }
+      .section input[type="text"],
+      .section input[type="number"] {
+        padding: 8px;
+        width: 200px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+      .add-btn {
+        padding: 10px 20px;
+        cursor: pointer;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+      .add-btn:hover {
+        background-color: #45a049;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 10px;
+        text-align: left;
+      }
+      th {
+        background-color: #f2f2f2;
+        color: #333;
+      }
+      .btn {
+        padding: 8px 16px;
+        cursor: pointer;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+      .btn:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+      }
+      .totals {
+        margin-bottom: 10px;
+      }
+      .signout-link {
+        display: flex;
+        margin-top: 10px;
+        color: #f44336;
+        cursor: pointer;
+        font-weight: bold;
+        justify-content: right;
+      }
+      .signout-link:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="alert" class="alert"></div>
+
+    <div class="signout-link" onclick="teacherSignout()">Sign Out</div>
+
+    <h2>Attendance Table</h2>
+    <div
+      style="display: flex; flex-direction: row; justify-content: space-between"
+    >
+      <div class="totals">
+        Total Sign-Ins: <span id="totalSignIn">0</span><br />
+        People Yet to Sign Out: <span id="peopleToSignOut">0</span>
+      </div>
+      <form id="attendanceForm" action="student.php" method="post">
+        <div class="section">
+          <label for="name">Student Name:</label>
+          <input type="text" id="name" name="name" required />
+        </div>
+        <div class="section">
+          <label for="laptop">Laptop Number:</label>
+          <input
+            type="number"
+            id="laptop"
+            name="laptop"
+            min="1"
+            max="35"
+            required
+          />
+        </div>
+        <input type="hidden" id="signIn" name="signIn" value="True" />
+        <input type="hidden" id="datetime" name="datetime" />
+        <input type="hidden" id="teacherId" name="teacherId" />
+        <button type="submit" value="submit" class="add-btn">Add</button>
+      </form>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>SN</th>
+          <th>Name</th>
+          <th>Laptop</th>
+          <th>SignIn</th>
+          <th>Time</th>
+          <th>SignOut</th>
+          <th>Time</th>
+        </tr>
+      </thead>
+      <tbody id="attendanceBody">
+        <!-- Existing and dynamically added rows will go here -->
+      </tbody>
+    </table>
+
+    <script>
+      function showAlert(message, type) {
+        const alertDiv = document.getElementById("alert");
+        alertDiv.className = `alert alert-${type}`;
+        alertDiv.textContent = message;
+        alertDiv.style.display = "block";
+        setTimeout(() => {
+          alertDiv.style.display = "none";
+        }, 5000);
+      }
+
+      function getCookie(name) {
+        let cookieArr = document.cookie.split(";");
+        for (let i = 0; i < cookieArr.length; i++) {
+          let cookiePair = cookieArr[i].split("=");
+          if (name == cookiePair[0].trim()) {
+            return decodeURIComponent(cookiePair[1]);
+          }
+        }
+        return null;
+      }
+
+      function deleteCookie(name) {
+        document.cookie =
+          name + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      }
+
+      if (!getCookie("teacher_id")) {
+        window.location.href = "index.html";
+      } else {
+        document.getElementById("teacherId").value = getCookie("teacher_id");
+      }
+
+      var totalSignIn = 0;
+      var totalSignOut = 0;
+
+      document
+        .getElementById("attendanceForm")
+        .addEventListener("submit", function () {
+          var currentDatetime = new Date();
+          var formattedDate =
+            currentDatetime.getFullYear() +
+            "-" +
+            String(currentDatetime.getMonth() + 1).padStart(2, "0") +
+            "-" +
+            String(currentDatetime.getDate()).padStart(2, "0") +
+            " " +
+            String(currentDatetime.getHours()).padStart(2, "0") +
+            ":" +
+            String(currentDatetime.getMinutes()).padStart(2, "0") +
+            ":" +
+            String(currentDatetime.getSeconds()).padStart(2, "0");
+          document.getElementById("datetime").value = formattedDate;
+        });
+
+      function addAttendance() {
+        var name = document.getElementById("name").value;
+        var laptop = document.getElementById("laptop").value;
+        if (name.trim() === "" || laptop.trim() === "") {
+          alert("Please enter both Name and Laptop.");
+          return;
+        }
+
+        var currentTime = new Date().toLocaleTimeString();
+
+        var tableBody = document.getElementById("attendanceBody");
+        var newRow = document.createElement("tr");
+        newRow.innerHTML = `
+                <td>${tableBody.children.length + 1}</td>
+                <td>${name}</td>
+                <td>${laptop}</td>
+                <td><button class="btn" onclick="signIn(this)">Sign In</button></td>
+                <td class="signInTime">${currentTime}</td>
+                <td><button class="btn" onclick="signOut(this)">Sign Out</button></td>
+                <td class="signOutTime">-</td>
+            `;
+        tableBody.appendChild(newRow);
+
+        totalSignIn++;
+        updateTotals();
+      }
+
+      function signIn(button) {
+        var currentTime = new Date().toLocaleTimeString();
+        var row = button.closest("tr");
+        row.querySelector(".signInTime").textContent = currentTime;
+        button.disabled = true;
+        totalSignOut--;
+        updateTotals();
+      }
+
+      function signOut(button) {
+        var currentDatetime = new Date();
+        var formattedDate =
+          currentDatetime.getFullYear() +
+          "-" +
+          String(currentDatetime.getMonth() + 1).padStart(2, "0") +
+          "-" +
+          String(currentDatetime.getDate()).padStart(2, "0") +
+          " " +
+          String(currentDatetime.getHours()).padStart(2, "0") +
+          ":" +
+          String(currentDatetime.getMinutes()).padStart(2, "0") +
+          ":" +
+          String(currentDatetime.getSeconds()).padStart(2, "0");
+        var row = button.closest("tr");
+        row.querySelector(".signOutTime").textContent = formattedDate;
+        button.disabled = true;
+        totalSignOut++;
+        updateTotals();
+
+        var name = row.querySelector("td:nth-child(2)").textContent;
+        var laptop = row.querySelector("td:nth-child(3)").textContent;
+        var teacherId = getCookie("teacher_id");
+
+        fetch("signout.php", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: name,
+            laptop: laptop.toString(),
+            signOutTime: formattedDate,
+            teacherId: teacherId,
+          }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              showAlert("Sign-out time saved successfully", "success");
+            } else {
+              showAlert("Error saving sign-out time: " + data.error, "error");
+            }
+          })
+          .catch((error) => {
+            showAlert("Error: " + error, "error");
+            console.error("Error:", error);
+          });
+      }
+
+      function updateTotals() {
+        document.getElementById("totalSignIn").textContent = totalSignIn;
+        var peopleToSignOut = totalSignIn - totalSignOut;
+        document.getElementById("peopleToSignOut").textContent =
+          peopleToSignOut > 0 ? peopleToSignOut : 0;
+      }
+
+      function fetchData() {
+        var teacherId = getCookie("teacher_id");
+
+        fetch("query.php?teacher_id=" + teacherId)
+          .then((response) => response.json())
+          .then((data) => {
+            console.log(JSON.stringify(data));
+            var tableBody = document.getElementById("attendanceBody");
+            tableBody.innerHTML = "";
+            data.forEach((item, index) => {
+              var newRow = document.createElement("tr");
+              newRow.innerHTML = `
+                            <td>${item.id}</td>
+                            <td>${item.name}</td>
+                            <td>${item.laptop}</td>
+                            <td><button class="btn" disabled>Sign In</button></td>
+                            <td class="signInTime"> ${
+                              item.signInTime || "-"
+                            }</td>
+                            <td><button class="btn" onclick="signOut(this)" ${
+                              Number(item.signOut) == 1 ? "disabled" : ""
+                            }>Sign Out</button></td>
+                            <td class="signOutTime">${
+                              item.signOutTime || "-"
+                            }</td>
+                        `;
+              tableBody.appendChild(newRow);
+            });
+            totalSignIn = data.length;
+            totalSignOut = data.filter((item) => item.signOut).length;
+            updateTotals();
+          })
+          .catch((error) => {
+            showAlert("Error: " + error, "error");
+            console.error("Error:", error);
+          });
+      }
+
+      function teacherSignout() {
+        var teacherId = getCookie("teacher_id");
+
+        fetch("teachersignout.php", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ teacherId: teacherId }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              deleteCookie("teacher_id");
+              deleteCookie("lesson");
+
+              window.location.href = "index.html";
+            } else {
+              showAlert("Error signing out: " + data.error, "error");
+            }
+          })
+          .catch((error) => {
+            showAlert("Error: " + error, "error");
+            console.error("Error:", error);
+          });
+      }
+
+      window.onload = fetchData;
+    </script>
+  </body>
+</html>
