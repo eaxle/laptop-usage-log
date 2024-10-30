@@ -7,7 +7,7 @@ This guide will help you set up and run a PHP project that includes PHP, HTML fi
 
 1. **Web Server:** Apache, Nginx, or any web server that supports PHP.
 2. **PHP:** Make sure PHP is installed. You can download it from [php.net](https://www.php.net/downloads).
-3. **Database:** Make sure you have MySQL or any other required database installed.
+3. **Database:** Make sure you have MySQL or any other required database installed. Run database.sql inside the project folder.
 4. **Composer:** For managing dependencies (optional).
 
 ## Setting Up the Environment
